@@ -152,7 +152,6 @@ elseif ($path == "/debug/deleteallstreams/" || $path == "/debug/deleteallstreams
 
 elseif ($requestMethod == "POST" && starts_with($path, "/add/"))
 {
-	header("x-was-in: POST /add/");
 	handler_add($db, $path);
 }
 
