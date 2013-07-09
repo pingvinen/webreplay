@@ -10,10 +10,6 @@ I use Nginx as a webserver and php-fpm as the PHP application server.
 
 My fpm-server listens to the port number 8999.
 
-```
-always_populate_raw_post_data = On
-```
-
 Requires mysqli.
 
 
