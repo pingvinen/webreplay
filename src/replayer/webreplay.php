@@ -1,11 +1,22 @@
 <?php
 
-$config = array(
-	"db_host" => "localhost",
-	"db_user" => "webreplay",
-	"db_pass" => "123456",
-	"db_name" => "webreplay"
-);
+//
+// get config
+//
+if (file_exists("config.php"))
+{
+	require 'config.php';
+}
+else
+{
+	$config = array(
+		"db_host" => "localhost",
+		"db_user" => "webreplay",
+		"db_pass" => "123456",
+		"db_name" => "webreplay"
+	);
+}
+
 
 
 
@@ -19,8 +30,33 @@ function handler_documentation()
 function handler_debug_streams($db)
 {
 	header("Content-Type: text/json", true);
-	echo "[{ \"stream_id\":\"somestream\" }]";
+
+	$list = [];
+
+	if ($res = $db->query("select * from `streams` order by `id` asc"))
+	{
+		while ($row = $res->fetch_assoc())
+		{
+			$list[] = array(
+				"stream_id" => $row["id"],
+				"description" => $row["description"],
+				"position" =>  (int)$row["position"]
+			);
+		}
+	}
+
+	echo json_encode($list);
 }
+
+
+
+function handler_debug_deleteallstreams($db)
+{
+	$db->query("delete from `entries`");
+	$db->query("delete from `streams`");
+}
+
+
 
 
 function handler_add($db, $path)
@@ -87,6 +123,7 @@ $requestMethod = strtoupper($_SERVER["REQUEST_METHOD"]);
  * GET "/" => documentation
  * GET "/debug/phpinfo/" => phpinfo
  * GET "/debug/streams/" => list of all streams
+ * GET "/debug/deleteallstreams/" => deletes all streams (makes unittesting of webreplayer easier)
  * POST "/add/streamid/" => adds the payload to the stream (and creates the stream if needed)
  * GET/POST "/streamid/" => returns the payload of the current (or last) entry in the stream
  * GET/POST "/streamid/entryid/" => returns the payload from the specific entry
@@ -108,8 +145,14 @@ elseif ($path == "/debug/streams/" || $path == "/debug/streams")
 	handler_debug_streams($db);
 }
 
+elseif ($path == "/debug/deleteallstreams/" || $path == "/debug/deleteallstreams")
+{
+	handler_debug_deleteallstreams($db);
+}
+
 elseif ($requestMethod == "POST" && starts_with($path, "/add/"))
 {
+	header("x-was-in: POST /add/");
 	handler_add($db, $path);
 }
 

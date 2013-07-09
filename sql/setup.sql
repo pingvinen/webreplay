@@ -20,7 +20,7 @@ COMMENT = 'Meta-data for streams';
 #
 # the stream entries
 #
-CREATE  TABLE `webreplay`.`entries` (
+CREATE  TABLE `entries` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'The entry ID' ,
   `stream_id` varchar(255) NOT NULL COMMENT 'The ID of the stream that this entry belongs to' ,
   `content` TEXT NOT NULL COMMENT 'The body of the request' ,

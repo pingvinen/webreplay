@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+if [ -n "$1" ]; then
+	cd $1
+fi
+
+# the real site
+cp src/replayer/webreplay.php /srv/http/webreplay/
+
+# the test site
+cp src/replayer/webreplay.php /srv/http/testwebreplay/
+cp src/replayer/test_config.php /srv/http/testwebreplay/config.php

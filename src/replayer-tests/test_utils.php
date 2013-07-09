@@ -13,4 +13,18 @@ function starts_with($haystack, $needle)
     return !strncmp($haystack, $needle, strlen($needle));
 }
 
+
+
+function delete_all_streams()
+{
+	$r = new HttpRequest(get_endpoint("/debug/deleteallstreams/"), HttpRequest::METH_GET);
+	$r->send();
+}
+
+
+function get_endpoint($path)
+{
+	return "http://test.webreplay.local$path";
+}
+
 ?>

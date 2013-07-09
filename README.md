@@ -71,3 +71,5 @@ cd /etc/php/conf.d
 ln -s ../mods-available/http.ini 20-http.ini
 service php5-fpm restart
 ```
+
+The tests uses the endpoint `http://test.webreplay.local`. This endpoint should use a different database than your regular webreplay install, as the tests need to control the database.
