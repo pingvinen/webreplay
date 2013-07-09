@@ -39,5 +39,5 @@ COMMENT = 'The entries of the streams';
 # the user
 #
 create user 'webreplay'@'localhost' identified by '123456';
-grant delete,insert,update,select on webreplay.* to 'webreplay'@'localhost';
+grant delete,insert,update,select,drop on webreplay.* to 'webreplay'@'localhost';
 flush privileges;

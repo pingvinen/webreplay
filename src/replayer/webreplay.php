@@ -20,6 +20,95 @@ else
 
 
 
+class Stream
+{
+	public $id = null;
+	public $description = null;
+	public $position = 0;
+	
+	private $db = null;
+	private $is_new = true;
+
+	public function __construct($streamid, $db)
+	{
+		$this->id = $streamid;
+		$this->db = $db;
+	}
+
+	public function load()
+	{
+		$q = $this->db->prepare("select `description`, `position` from `streams` where `id`=? limit 1");
+		$q->bind_param("s", $this->id);
+		$q->execute();
+		$q->bind_result($col_description, $col_position);
+		$q->fetch();
+		$q->close();
+
+		$this->description = $col_description;
+		$this->position = (int)$col_position;
+
+		$this->is_new = false;
+	}
+
+	public function save()
+	{
+		if ($this->is_new)
+		{
+			throw new Exception("Saving a new stream has not been implemented yet");
+		}
+		else
+		{
+			$q = $this->db->prepare("update `streams` set `description`=?, `position`=? where `id`=? limit 1");
+			$q->bind_param("sis", $this->description, $this->position, $this->id);
+			$q->execute();
+		}
+	}
+
+	public function get_specific_entry($entryid)
+	{
+		$q = $this->db->prepare("select `id`, `stream_id`, `content` from `entries` where `id`=? limit 1");
+		$q->bind_param("i", $entryid);
+		$q->execute();
+		$q->bind_result($col_id, $col_streamid, $col_content);
+		$q->fetch();
+		$q->close();
+
+		return $col_content;
+	}
+
+	public function get_next_or_last_entry()
+	{
+		$result = null;
+		//
+		// get the next entry
+		//
+		$q = $this->db->prepare("select `id`, `stream_id`, `content` from `entries` where `stream_id`=? && `id`>? order by `id` asc limit 1");
+		$q->bind_param("si", $this->id, $this->position);
+		$q->execute();
+		$q->bind_result($col_id, $col_streamid, $col_content);
+		$q->fetch();
+		$result = $col_content;
+		$q->close();
+
+		if ($col_id == null)
+		{
+			// we are at the end of the stream
+			// return the last entry (should be the original position)
+			return $this->get_specific_entry($this->position);
+		}
+
+		// update the stream position
+		$this->position = $col_id;
+		$this->save();
+
+		return $result;
+	}
+
+
+}
+
+
+
 function handler_documentation()
 {
 	echo "<h1>Web Replay</h1>";
@@ -52,8 +141,15 @@ function handler_debug_streams($db)
 
 function handler_debug_deleteallstreams($db)
 {
-	$db->query("delete from `entries`");
-	$db->query("delete from `streams`");
+	$db->autocommit(FALSE);
+
+	$db->query("set foreign_key_checks = 0");
+	$db->query("truncate table `entries`");
+	$db->query("truncate table `streams`");
+	$db->query("set foreign_key_checks = 1");
+
+	$db->commit();
+	$db->autocommit(TRUE);
 }
 
 
@@ -107,67 +203,20 @@ function handler_get($db, $path)
 	 */
 	if (preg_match("/\/(?<streamid>[a-z0-9]+)\/*(?<entryid>[0-9]+)*\/?/i", $path, $matches) === 1)
 	{
-		$do_update_pos = true;
 		$streamid = $matches["streamid"];
-		$old_pos = null;
 
-		$entryid = null;
+		$stream = new Stream($streamid, $db);
+		$stream->load();
+
 		if (array_key_exists("entryid", $matches) === TRUE)
 		{
-			$entryid = $matches["entryid"];
+			echo $stream->get_specific_entry($matches["entryid"]);
+			return;
 		}
 
-		//
-		// get stream position
-		//
-		$q = $db->prepare("select `position` from `streams` where `id`=? limit 1");
-		$q->bind_param("s", $streamid);
-		$q->execute();
-		$q->bind_result($streampos);
-		$q->fetch();
-		$q->close();
-		$old_pos = $streampos;
-
-
-		//
-		// get the next entry
-		//
-		$x = $db->prepare("select `id`, `stream_id`, `content` from `entries` where `stream_id`=? && `id`>? order by `id` asc limit 1");
-		$x->bind_param("si", $streamid, $streampos);
-		$x->execute();
-		$x->bind_result($col_id, $col_streamid, $col_content);
-		$x->fetch();
-		$x->close();
-
-		if ($col_id == null)
-		{
-			// we are at the end of the stream
-			$x = $db->prepare("select `id`, `stream_id`, `content` from `entries` where `id`=? limit 1");
-			$x->bind_param("i", $old_pos);
-			$x->execute();
-			$x->bind_result($col_id, $col_streamid, $col_content);
-			$x->fetch();
-			$x->close();
-
-			$do_update_pos = false;
-		}
-
-		//
-		// update the stream position (if needed)
-		//
-		if ($do_update_pos)
-		{
-			$streampos = $col_id;
-			$y = $db->prepare("update `streams` set `position`=? where `id`=? limit 1");
-			$y->bind_param("is", $streampos, $streamid);
-			$y->execute();
-			$y->close();
-		}
-
-		echo $col_content;
+		echo $stream->get_next_or_last_entry();
 		return;
 	}
-
 
 
 	header('HTTP/1.0 404 Not Found');
