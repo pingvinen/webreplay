@@ -14,7 +14,10 @@ function starts_with($haystack, $needle)
 }
 
 
-
+/**
+ * Deletes all streams from the system
+ * @return void
+ */
 function delete_all_streams()
 {
 	$r = new HttpRequest(get_endpoint("/debug/deleteallstreams/"), HttpRequest::METH_GET);
@@ -22,6 +25,12 @@ function delete_all_streams()
 }
 
 
+/**
+ * Get the test endpoint for the given path
+ *
+ * @param string $path The path to request (e.g. "/debug/streams")
+ * @return string The request url
+ */
 function get_endpoint($path)
 {
 	return "http://test.webreplay.local$path";
