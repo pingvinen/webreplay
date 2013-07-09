@@ -101,6 +101,75 @@ function handler_add($db, $path)
 
 function handler_get($db, $path)
 {
+	/**
+	 * http://www.phpliveregex.com/
+	 * http://www.phpliveregex.com/p/B6
+	 */
+	if (preg_match("/\/(?<streamid>[a-z0-9]+)\/*(?<entryid>[0-9]+)*\/?/i", $path, $matches) === 1)
+	{
+		$do_update_pos = true;
+		$streamid = $matches["streamid"];
+		$old_pos = null;
+
+		$entryid = null;
+		if (array_key_exists("entryid", $matches) === TRUE)
+		{
+			$entryid = $matches["entryid"];
+		}
+
+		//
+		// get stream position
+		//
+		$q = $db->prepare("select `position` from `streams` where `id`=? limit 1");
+		$q->bind_param("s", $streamid);
+		$q->execute();
+		$q->bind_result($streampos);
+		$q->fetch();
+		$q->close();
+		$old_pos = $streampos;
+
+
+		//
+		// get the next entry
+		//
+		$x = $db->prepare("select `id`, `stream_id`, `content` from `entries` where `stream_id`=? && `id`>? order by `id` asc limit 1");
+		$x->bind_param("si", $streamid, $streampos);
+		$x->execute();
+		$x->bind_result($col_id, $col_streamid, $col_content);
+		$x->fetch();
+		$x->close();
+
+		if ($col_id == null)
+		{
+			// we are at the end of the stream
+			$x = $db->prepare("select `id`, `stream_id`, `content` from `entries` where `id`=? limit 1");
+			$x->bind_param("i", $old_pos);
+			$x->execute();
+			$x->bind_result($col_id, $col_streamid, $col_content);
+			$x->fetch();
+			$x->close();
+
+			$do_update_pos = false;
+		}
+
+		//
+		// update the stream position (if needed)
+		//
+		if ($do_update_pos)
+		{
+			$streampos = $col_id;
+			$y = $db->prepare("update `streams` set `position`=? where `id`=? limit 1");
+			$y->bind_param("is", $streampos, $streamid);
+			$y->execute();
+			$y->close();
+		}
+
+		echo $col_content;
+		return;
+	}
+
+
+
 	header('HTTP/1.0 404 Not Found');
 }
 
