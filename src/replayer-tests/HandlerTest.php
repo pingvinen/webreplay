@@ -147,6 +147,74 @@ class HandlerTest extends PHPUnit_Framework_TestCase
 
 		$this->assertJsonStringEqualsJsonString($expected_list, $list->getResponseBody(), "Lists do not match");
 	}
+
+
+
+	/**
+	 * Test simple get replaying with 2 entries.
+	 * Requests are made using HTTP GET
+	 */
+	public function test_get_simple_using_get()
+	{
+		$streamid = "teststream";
+		$e1content = "{\"name\":\"entry1\",\"int\":1}";
+		$e2content = "{\"name\":\"entry2\",\"int\":2}";
+
+		//
+		// add entry 1
+		//
+		$add = new HttpRequest(get_endpoint("/add/$streamid/"), HttpRequest::METH_POST);
+		$add->addRawPostData($e1content);
+
+		$add->send();
+
+		//
+		// add entry 2
+		//
+		$add = new HttpRequest(get_endpoint("/add/$streamid/"), HttpRequest::METH_POST);
+		$add->addRawPostData($e2content);
+
+		$add->send();
+
+
+
+		//
+		// get entry 1
+		//
+		$e1 = new HttpRequest(get_endpoint("/$streamid/"), HttpRequest::METH_GET);
+		$e1->send();
+		$this->assertEquals($e1content, $e1->getResponseBody(), "The response for the first entry is wrong");
+
+		//
+		// get entry 2
+		//
+		$e2 = new HttpRequest(get_endpoint("/$streamid/"), HttpRequest::METH_GET);
+		$e2->send();
+		$this->assertEquals($e2content, $e2->getResponseBody(), "The response for the second entry is wrong");
+
+		//
+		// get last entry (should be entry 2)
+		//
+		$last = new HttpRequest(get_endpoint("/$streamid/"), HttpRequest::METH_GET);
+		$last->send();
+		$this->assertEquals($e2content, $last->getResponseBody(), "The response for the last entry is wrong");
+	}
+
+
+
+	/**
+	 * Additional tests
+	 *
+	 * add without stream
+	 * add with invalid streamid
+	 * add with no payload
+	 *
+	 * get a non-existant stream
+	 * get specific stream entry
+	 * get specific stream entry that does not belong to the named stream
+	 * get with invalid streamid
+	 * get with invalid entryid
+	 */
 }
 
 ?>

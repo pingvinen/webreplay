@@ -99,6 +99,14 @@ function handler_add($db, $path)
 
 
 
+function handler_get($db, $path)
+{
+	header('HTTP/1.0 404 Not Found');
+}
+
+
+
+
 function starts_with($haystack, $needle)
 {
     return !strncmp($haystack, $needle, strlen($needle));
@@ -157,7 +165,7 @@ elseif ($requestMethod == "POST" && starts_with($path, "/add/"))
 
 else
 {
-	header('HTTP/1.0 404 Not Found');
+	handler_get($db, $path);
 }
 
 
