@@ -110,6 +110,26 @@ class SimpleGetTest extends FixtureBase
 		$last->send();
 		$this->assertEquals($e2content, $last->getResponseBody(), "The response for the last entry is wrong");
 	}
+
+
+
+
+	/**
+	 * Test simple get for a non-existant stream.
+	 * Requests are made using HTTP GET
+	 */
+	public function test_nonexistant_stream_using_get()
+	{
+		$streamid = "iamaghostidonotexist";
+
+		//
+		// the get
+		//
+		$e1 = new HttpRequest(get_endpoint("/$streamid/"), HttpRequest::METH_GET);
+		$e1->send();
+		$this->assertEquals(404, $e1->getResponseCode(), "The response code should have been a 404");
+		$this->assertEquals("", $e1->getResponseBody(), "The response body should be empty");
+	}
 }
 
 ?>

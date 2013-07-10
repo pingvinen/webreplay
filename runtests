@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-phpunit --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/
+phpunit --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/
+#phpunit --filter test_valid_using_get --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/getters/SimpleGetTest.php

@@ -37,12 +37,19 @@ class Stream
 
 	public function load()
 	{
+		$has_match = false;
+
 		$q = $this->db->prepare("select `description`, `position` from `streams` where `id`=? limit 1");
 		$q->bind_param("s", $this->id);
 		$q->execute();
 		$q->bind_result($col_description, $col_position);
-		$q->fetch();
+		$has_match = $q->fetch();
 		$q->close();
+
+		if ($has_match !== true)
+		{
+			throw new Exception("No such stream");
+		}
 
 		$this->description = $col_description;
 		$this->position = (int)$col_position;
@@ -103,8 +110,6 @@ class Stream
 
 		return $result;
 	}
-
-
 }
 
 
@@ -206,7 +211,17 @@ function handler_get($db, $path)
 		$streamid = $matches["streamid"];
 
 		$stream = new Stream($streamid, $db);
-		$stream->load();
+
+		try
+		{
+			$stream->load();
+		}
+
+		catch (Exception $ex)
+		{
+			header('HTTP/1.0 404 Not Found');
+			return;
+		}
 
 		if (array_key_exists("entryid", $matches) === TRUE)
 		{
