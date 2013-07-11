@@ -125,22 +125,25 @@ class Stream
 		//
 		// get the next entry
 		//
-		$q = $this->db->prepare("select `id`, `stream_id`, `content` from `entries` where `stream_id`=? && `id`>? order by `id` asc limit 1");
-		$q->bind_param("si", $this->id, $this->position);
-		$q->execute();
-		$q->bind_result($col_id, $col_streamid, $col_content);
-		$q->fetch();
-		$result = new StreamEntry($col_id, $col_streamid, $col_content);
-		$q->close();
+		$q = (new SqlQuery("select `id`, `stream_id`, `content` from `entries` where `stream_id`=@streamid && `id`>@pos order by `id` asc limit 1"))
+				->add_param("@streamid", $this->id)
+				->add_param("@pos", $this->position)
+				->prepare($this->db);
 
-		if ($col_id == null)
+		$res = $this->db->query($q);
+		if ($res->num_rows !== 1)
 		{
 			// we are at the end of the stream
 			// return the last entry (should be the original position)
 			return $this->get_specific_entry($this->position);
 		}
 
+		$row = $res->fetch_assoc();
+		$result = new StreamEntry($row['id'], $row['stream_id'], $row['content']);
+
+		//
 		// update the stream position
+		//
 		$this->position = $result->id;
 		$this->save();
 
