@@ -228,9 +228,9 @@ function handler_get($db, $path)
 {
 	/**
 	 * http://www.phpliveregex.com/
-	 * http://www.phpliveregex.com/p/CP
+	 * http://www.phpliveregex.com/p/CQ
 	 */
-	if (preg_match("/\/(?<streamid>[^\/]+)\/*(?<entryid>[^\/?]+)*\/?/i", $path, $matches) === 1)
+	if (preg_match("/\/(?<streamid>[^\/?]+)\/*(?<entryid>[^\/?]+)*\/?/i", $path, $matches) === 1)
 	{
 		$streamid = $matches["streamid"];
 

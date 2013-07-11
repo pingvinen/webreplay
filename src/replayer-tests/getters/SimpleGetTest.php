@@ -123,6 +123,64 @@ class SimpleGetTest extends FixtureBase
 		$this->assertEquals(404, $e1->getResponseCode(), "The response code should have been a 404");
 		$this->assertEquals("", $e1->getResponseBody(), "The response body should be empty");
 	}
+
+
+
+
+
+	/**
+	 * Test simple get with query-string parameters
+	 * Requests are made using HTTP GET
+	 */
+	public function test_valid_with_querystring_no_end_slash_using_get()
+	{
+		$streamid = "teststream";
+		$e1content = "{\"name\":\"entry1\",\"int\":1}";
+
+		//
+		// create stream
+		//
+		$add = new HttpRequest(get_endpoint("/add/$streamid/"), HttpRequest::METH_POST);
+		$add->addRawPostData($e1content);
+		$add->send();
+
+
+		//
+		// get entry 1
+		//
+		$e1 = new HttpRequest(get_endpoint("/$streamid?q=x"), HttpRequest::METH_POST);
+		$e1->send();
+		$this->assertEquals(200, $e1->getResponseCode(), "The response code should have been 200");
+		$this->assertEquals($e1content, $e1->getResponseBody(), "The response for the first entry is wrong");
+	}
+
+
+
+	/**
+	 * Test simple get with query-string parameters
+	 * Requests are made using HTTP GET
+	 */
+	public function test_valid_with_querystring_with_end_slash_using_get()
+	{
+		$streamid = "teststream";
+		$e1content = "{\"name\":\"entry1\",\"int\":1}";
+
+		//
+		// create stream
+		//
+		$add = new HttpRequest(get_endpoint("/add/$streamid/"), HttpRequest::METH_POST);
+		$add->addRawPostData($e1content);
+		$add->send();
+
+
+		//
+		// get entry 1
+		//
+		$e1 = new HttpRequest(get_endpoint("/$streamid/?q=x"), HttpRequest::METH_POST);
+		$e1->send();
+		$this->assertEquals(200, $e1->getResponseCode(), "The response code should have been 200");
+		$this->assertEquals($e1content, $e1->getResponseBody(), "The response for the first entry is wrong");
+	}
 }
 
 ?>
