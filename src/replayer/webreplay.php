@@ -371,6 +371,20 @@ END;
 	$p_delay->where = "Query-string or post variables";
 	$p_delay->isoptional = true;
 
+	$p_error_code = new EndpointParameter();
+	$p_error_code->name = "error_code";
+	$p_error_code->example = "456";
+	$p_error_code->description = "Forces a response with the given code (and message if 'error_msg' is defined).<br>Note that this disables the actual stream response.";
+	$p_error_code->where = "Query-string or post variables";
+	$p_error_code->isoptional = true;
+
+	$p_error_msg = new EndpointParameter();
+	$p_error_msg->name = "error_msg";
+	$p_error_msg->example = "Something terrible happened";
+	$p_error_msg->description = "Forced response status (if 'error_code' is defined). Remember to urlencode it.";
+	$p_error_msg->where = "Query-string or post variables";
+	$p_error_msg->isoptional = true;
+
 	echo get_endpoint_doc(
 		"GET /debug/streams",
 		"Lists all streams in a json format"
@@ -395,13 +409,13 @@ END;
 	echo get_endpoint_doc(
 		"GET or POST /{streamid}",
 		"Gets the next or last entry from the stream.",
-		array($p_streamid, $p_delay)
+		array($p_streamid, $p_delay, $p_error_code, $p_error_msg)
 	);
 
 	echo get_endpoint_doc(
 		"GET or POST /{streamid}/{entryid}",
 		"Gets the next or last entry from the stream.",
-		array($p_streamid, $p_entryid, $p_delay)
+		array($p_streamid, $p_entryid, $p_delay, $p_error_code, $p_error_msg)
 	);
 }
 
@@ -519,12 +533,29 @@ elseif ($requestMethod == "POST" && starts_with($path, "/add/"))
 else
 {
 	$delay_in_seconds = null;
-
+	
+	// delay
 	if (array_key_exists("delay", $_REQUEST))
 	{
 		$delay_in_seconds = $_REQUEST["delay"];
 	}
 
+	// forced error response
+	if (array_key_exists("error_code", $_REQUEST))
+	{
+		$error_code = $_REQUEST["error_code"];
+		$error_msg = "";
+
+		if (array_key_exists("error_msg", $_REQUEST))
+		{
+			$error_msg = urldecode($_REQUEST["error_msg"]);
+		}
+
+		header("HTTP/1.0 $error_code $error_msg");
+		return;
+	}
+
+	// call the handler
 	echo handler_get($db, $path, $delay_in_seconds);
 }
 
