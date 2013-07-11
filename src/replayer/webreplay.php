@@ -96,19 +96,27 @@ class Stream
 
 	public function get_specific_entry($entryid)
 	{
-		$q = $this->db->prepare("select `id`, `stream_id`, `content` from `entries` where `id`=? limit 1");
-		$q->bind_param("i", $entryid);
-		$q->execute();
-		$q->bind_result($col_id, $col_streamid, $col_content);
-		$q->fetch();
-		$q->close();
+		$q = (new SqlQuery("select `id`, `stream_id`, `content` from `entries` where `id`=@entryid limit 1"))
+				->add_param("@entryid", $entryid)
+				->prepare($this->db);
 
-		if ($col_streamid != $this->id)
+		$res = $this->db->query($q);
+		if ($res->num_rows !== 1)
 		{
 			return null;
 		}
 
-		return new StreamEntry($col_id, $col_streamid, $col_content);
+		$row = $res->fetch_assoc();
+		$entry = new StreamEntry($row['id'], $row['stream_id'], $row['content']);
+
+		// make sure that the entry is actually
+		// a part of this stream
+		if ($entry->streamid != $this->id)
+		{
+			return null;
+		}
+
+		return $entry;
 	}
 
 	public function get_next_or_last_entry()
