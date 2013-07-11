@@ -56,24 +56,25 @@ class Stream
 
 	public function load()
 	{
-		$has_match = false;
+		$sql = new SqlQuery("select `description`, `position` from `streams` where `id`=@streamid limit 1");
+		$sql->add_param("@streamid", $this->id);
 
-		$q = $this->db->prepare("select `description`, `position` from `streams` where `id`=? limit 1");
-		$q->bind_param("s", $this->id);
-		$q->execute();
-		$q->bind_result($col_description, $col_position);
-		$has_match = $q->fetch();
-		$q->close();
-
-		if ($has_match !== true)
+		if ($res = $this->db->query($sql->prepare($this->db)))
 		{
-			throw new Exception("No such stream");
+			if ($res->num_rows !== 1)
+			{
+				throw new Exception("No such stream");
+			}
+
+			$row = $res->fetch_assoc();
+
+			$this->description = $row['description'];
+			$this->position = (int)$row['position'];
+			$this->is_new = false;
+			return;
 		}
 
-		$this->description = $col_description;
-		$this->position = (int)$col_position;
-
-		$this->is_new = false;
+		throw new Exception("No such stream");
 	}
 
 	public function save()

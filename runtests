@@ -7,4 +7,4 @@ phpunit --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-test
 #phpunit --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/getters/SpecificGetTest.php
 
 # run specific test
-#phpunit --filter test_delete_valid_no_end_slash --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/DeleteTest.php
+#phpunit --filter test_nonexistant_stream_using_get --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/getters/SimpleGetTest.php
