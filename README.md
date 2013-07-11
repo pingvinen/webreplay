@@ -1,6 +1,10 @@
 Web Replay
 ==========
 
+Documentation
+-------------
+
+Just open the document root of your installation with a browser :)
 
 
 PHP configuration
