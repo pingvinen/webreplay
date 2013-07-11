@@ -233,7 +233,7 @@ function handler_add($db, $path)
 
 
 
-function handler_get($db, $path)
+function handler_get($db, $path, $delay_in_seconds = null)
 {
 	/**
 	 * http://www.phpliveregex.com/
@@ -255,6 +255,17 @@ function handler_get($db, $path)
 			header('HTTP/1.0 404 Not Found');
 			return;
 		}
+
+
+		//
+		// delay
+		//
+		if (is_numeric($delay_in_seconds) && $delay_in_seconds > 0)
+		{
+			sleep($delay_in_seconds);
+		}
+
+
 
 		//
 		// handle requests for specific entries
@@ -350,6 +361,13 @@ END;
 	$p_entryid->where = "Path";
 	$p_entryid->isoptional = false;
 
+	$p_delay = new EndpointParameter();
+	$p_delay->name = "delay";
+	$p_delay->example = "15";
+	$p_delay->description = "Response delay in seconds (integer).<br>The delay is imposed just after loading of the stream.";
+	$p_delay->where = "Query-string or post variables";
+	$p_delay->isoptional = true;
+
 	echo get_endpoint_doc(
 		"GET /debug/streams",
 		"Lists all streams in a json format"
@@ -374,13 +392,13 @@ END;
 	echo get_endpoint_doc(
 		"GET or POST /{streamid}",
 		"Gets the next or last entry from the stream.",
-		array($p_streamid)
+		array($p_streamid, $p_delay)
 	);
 
 	echo get_endpoint_doc(
 		"GET or POST /{streamid}/{entryid}",
 		"Gets the next or last entry from the stream.",
-		array($p_streamid, $p_entryid)
+		array($p_streamid, $p_entryid, $p_delay)
 	);
 }
 
@@ -497,7 +515,14 @@ elseif ($requestMethod == "POST" && starts_with($path, "/add/"))
 
 else
 {
-	echo handler_get($db, $path);
+	$delay_in_seconds = null;
+
+	if (array_key_exists("delay", $_REQUEST))
+	{
+		$delay_in_seconds = $_REQUEST["delay"];
+	}
+
+	echo handler_get($db, $path, $delay_in_seconds);
 }
 
 
