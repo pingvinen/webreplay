@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
 phpunit --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/
-#phpunit --filter test_invalidstreamid_using_get --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/getters/SimpleGetTest.php
+#phpunit --filter test_valid_using_get --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/getters/SpecificGetTest.php
+#phpunit --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/getters/SpecificGetTest.php

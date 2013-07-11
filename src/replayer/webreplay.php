@@ -18,6 +18,25 @@ else
 }
 
 
+function logthis($stuff, $from = '')
+{
+	global $config;
+
+	$conn = new mysqli($config["db_host"], $config["db_user"], $config["db_pass"], $config["db_name"]);
+
+	if ($conn->connect_error)
+	{
+		error_log("logthis cannot connect: "+$conn->connect_error, 4);
+		exit();
+	}
+
+	$from = $conn->real_escape_string($from);
+	$stuff = $conn->real_escape_string($stuff);
+
+	$conn->query("insert into `log` (`from`,`message`) values('$from', '$stuff')");
+	$conn->close();
+}
+
 
 
 class Stream
@@ -79,6 +98,11 @@ class Stream
 		$q->bind_result($col_id, $col_streamid, $col_content);
 		$q->fetch();
 		$q->close();
+
+		if ($col_streamid != $this->id)
+		{
+			return null;
+		}
 
 		return $col_content;
 	}
@@ -225,7 +249,14 @@ function handler_get($db, $path)
 
 		if (array_key_exists("entryid", $matches) === TRUE)
 		{
-			echo $stream->get_specific_entry($matches["entryid"]);
+			$result = $stream->get_specific_entry($matches["entryid"]);
+			if ($result === null)
+			{
+				header('HTTP/1.0 404 Not Found');
+				return;
+			}
+
+			echo $result;
 			return;
 		}
 
