@@ -154,13 +154,6 @@ class StreamEntry
 
 
 
-function handler_documentation()
-{
-	echo "<h1>Web Replay</h1>";
-	echo "<p><a href=\"https://github.com/pingvinen/webreplay/\" target=\"_blank\">Github</a></p>";
-}
-
-
 function handler_debug_streams($db)
 {
 	header("Content-Type: text/json", true);
@@ -300,6 +293,147 @@ function handler_get($db, $path)
 
 
 	header('HTTP/1.0 400 Invalid stream or entry ID');
+}
+
+
+
+class EndpointParameter
+{
+	public $name = null;
+	public $example = null;
+	public $description = null;
+	public $where = null;
+	public $isoptional = false;
+
+	public function isoptional_yesno()
+	{
+		if ($this->isoptional === true)
+		{
+			return "yes";
+		}
+
+		return "no";
+	}
+}
+
+
+function handler_documentation()
+{
+	echo "<h1>Web Replay</h1>";
+	echo "<p><a href=\"https://github.com/pingvinen/webreplay/\" target=\"_blank\">Github</a></p>";
+	echo <<<END
+<style>
+th {
+	text-align: left;
+}
+</style>
+END;
+
+	$p_streamid = new EndpointParameter();
+	$p_streamid->name = "streamid";
+	$p_streamid->example = "mystream";
+	$p_streamid->description = "The ID of the stream to add to";
+	$p_streamid->where = "Path";
+	$p_streamid->isoptional = false;
+
+	$p_payload = new EndpointParameter();
+	$p_payload->name = "payload";
+	$p_payload->example = "{\"my\": \"json\"}";
+	$p_payload->description = "The paylod to add. This can be anything.";
+	$p_payload->where = "Request body";
+	$p_payload->isoptional = false;
+
+	$p_entryid = new EndpointParameter();
+	$p_entryid->name = "entryid";
+	$p_entryid->example = "123";
+	$p_entryid->description = "The ID of a specific entry in the stream (these are non-linear)";
+	$p_entryid->where = "Path";
+	$p_entryid->isoptional = false;
+
+	echo get_endpoint_doc(
+		"GET /debug/streams",
+		"Lists all streams in a json format"
+	);
+
+	echo get_endpoint_doc(
+		"GET /debug/deleteallstreams",
+		"Deletes all streams and their entries. This is only meant to be used for unittests."
+	);
+
+	echo get_endpoint_doc(
+		"GET /debug/phpinfo",
+		"Runs phpinfo. Just a convenience."
+	);
+
+	echo get_endpoint_doc(
+		"POST /add/{streamid}",
+		"Adds an entry to a stream. If the stream does not exist, it is created.",
+		array($p_streamid, $p_payload)
+	);
+
+	echo get_endpoint_doc(
+		"GET or POST /{streamid}",
+		"Gets the next or last entry from the stream.",
+		array($p_streamid)
+	);
+
+	echo get_endpoint_doc(
+		"GET or POST /{streamid}/{entryid}",
+		"Gets the next or last entry from the stream.",
+		array($p_streamid, $p_entryid)
+	);
+}
+
+
+/**
+ * Generates html documentation for an endpoint
+ *
+ * @param string $endpoint The http method and endpoint (e.g. "POST /my/endpoint/{variable}")
+ * @param string $description A description of the endpoint
+ * @param [EndpointParameter[]] $parameters Optional: An array of endpoint parameters
+ * @return string The HTML
+ */
+function get_endpoint_doc($endpoint, $description, $parameters = array())
+{
+	$html = "";
+
+	$html .= "<h2>$endpoint</h2>";
+	$html .= "<p>$description</p>";
+
+	if (!is_array($parameters) || count($parameters) === 0)
+	{
+		return $html;
+	}
+
+	$html .= <<<END
+<table>
+	<tr>
+		<th>Parameter</th>
+		<th>Example</th>
+		<th>Description</th>
+		<th>Where</th>
+		<th>Optional</th>
+	</tr>
+END;
+
+
+
+	foreach ($parameters as $param)
+	{
+		$yesno = $param->isoptional_yesno();
+		$html .= <<<END
+	<tr>
+		<td>$param->name</td>
+		<td>$param->example</td>
+		<td>$param->description</td>
+		<td>$param->where</td>
+		<td>$yesno</td>
+	</tr>
+END;
+	}
+
+	$html .= "</table>";
+	return $html;
 }
 
 
