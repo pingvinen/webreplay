@@ -422,7 +422,7 @@ END;
 	$p_streamid = new EndpointParameter();
 	$p_streamid->name = "streamid";
 	$p_streamid->example = "mystream";
-	$p_streamid->description = "The ID of the stream to add to";
+	$p_streamid->description = "The ID of the stream";
 	$p_streamid->where = "Path";
 	$p_streamid->isoptional = false;
 
@@ -492,6 +492,12 @@ END;
 		"GET or POST /{streamid}/{entryid}",
 		"Gets the next or last entry from the stream.",
 		array($p_streamid, $p_entryid, $p_delay, $p_error_code, $p_error_msg)
+	);
+
+	echo get_endpoint_doc(
+		"DELETE /{streamid}",
+		"Delete the stream and all of its entries",
+		array($p_streamid)
 	);
 }
 
