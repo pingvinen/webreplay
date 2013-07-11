@@ -233,7 +233,7 @@ function handler_add($db, $path)
 
 
 
-function handler_get($db, $path, $delay_in_seconds = null)
+function handler_get($db, $path)
 {
 	/**
 	 * http://www.phpliveregex.com/
@@ -255,16 +255,6 @@ function handler_get($db, $path, $delay_in_seconds = null)
 			header('HTTP/1.0 404 Not Found');
 			return;
 		}
-
-
-		//
-		// delay
-		//
-		if (is_numeric($delay_in_seconds) && $delay_in_seconds > 0)
-		{
-			sleep($delay_in_seconds);
-		}
-
 
 
 		//
@@ -367,7 +357,7 @@ END;
 	$p_delay = new EndpointParameter();
 	$p_delay->name = "delay";
 	$p_delay->example = "15";
-	$p_delay->description = "Response delay in seconds (integer).<br>The delay is imposed just after loading of the stream.";
+	$p_delay->description = "Response delay in seconds (integer).<br>The delay is imposed before doing anything with streams or parsing.<br>This can be combined with forced error responses.";
 	$p_delay->where = "Query-string or post variables";
 	$p_delay->isoptional = true;
 
@@ -538,6 +528,14 @@ else
 	if (array_key_exists("delay", $_REQUEST))
 	{
 		$delay_in_seconds = $_REQUEST["delay"];
+
+		//
+		// delay
+		//
+		if (is_numeric($delay_in_seconds) && $delay_in_seconds > 0)
+		{
+			sleep($delay_in_seconds);
+		}
 	}
 
 	// forced error response
