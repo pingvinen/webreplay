@@ -81,7 +81,13 @@ class Stream
 	{
 		if ($this->is_new)
 		{
-			throw new Exception("Saving a new stream has not been implemented yet");
+			$q = (new SqlQuery("insert into `streams` (`id`,`description`) values(@streamid,@desc)"))
+				->add_param("@streamid", $this->id)
+				->add_param("@desc", $this->description)
+				->prepare($this->db);
+
+			$this->db->query($q);
+			$this->is_new = false;
 		}
 		else
 		{
@@ -286,22 +292,18 @@ function handler_add($db, $path)
 		#
 		# create the stream
 		#
-		if ($q = $db->prepare("insert into `streams` (`id`,`description`) values(?,?)"))
-		{
-			$q->bind_param("ss", $streamid, $description);
-			$q->execute();
-		}
-
+		$stream = new Stream($streamid, $db);
+		$stream->description = $description;
+		$stream->save();
 
 		#
 		# add the entry
 		#
-		if ($q = $db->prepare("insert into `entries` (`stream_id`,`content`) values(?,?)"))
-		{
-			$q->bind_param("ss", $streamid, $payload);
-			$q->execute();
-		}
-
+		$q = (new SqlQuery("insert into `entries` (`stream_id`,`content`) values(@streamid,@content)"))
+				->add_param("@streamid", $streamid)
+				->add_param("@content", $payload)
+				->prepare($db);
+		$db->query($q);
 
 		return;
 	}
