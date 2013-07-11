@@ -17,43 +17,73 @@ else
 	);
 }
 
-
-function logthis($stuff, $from = '')
+//
+// define the log method
+//
+if (!function_exists("logthis"))
 {
-	global $config;
-
-	$conn = new mysqli($config["db_host"], $config["db_user"], $config["db_pass"], $config["db_name"]);
-
-	if ($conn->connect_error)
+	function logthis($stuff, $from = '')
 	{
-		error_log("logthis cannot connect: "+$conn->connect_error, 4);
-		exit();
+		// do nothing
+
+		//
+		// you should override this in config.php if you need logging
+		//
 	}
-
-	$from = $conn->real_escape_string($from);
-	$stuff = $conn->real_escape_string($stuff);
-
-	$conn->query("insert into `log` (`from`,`message`) values('$from', '$stuff')");
-	$conn->close();
 }
 
 
 
+/**
+ * Represents a replay stream
+ */
 class Stream
 {
+	/**
+	 * The id of the stream
+	 * @var string 
+	 */
 	public $id = null;
+
+	/**
+	 * Description of the stream
+	 * @var string
+	 */
 	public $description = null;
+
+	/**
+	 * The last returned entry ID
+	 * @var int
+	 */
 	public $position = 0;
 	
+	/**
+	 * Database instance
+	 * @var MySqli
+	 */
 	private $db = null;
+
+	/**
+	 * Whether this is a loaded
+	 * or created instance
+	 * @var bool
+	 */
 	private $is_new = true;
 
+	/**
+	 * Constructor
+	 * @param string $streamid The ID of the stream
+	 * @param MySqli $db The database instance to use
+	 */
 	public function __construct($streamid, $db)
 	{
 		$this->id = $streamid;
 		$this->db = $db;
 	}
 
+	/**
+	 * Load the stream information from the database
+	 */
 	public function load()
 	{
 		$sql = new SqlQuery("select `description`, `position` from `streams` where `id`=@streamid limit 1");
@@ -77,6 +107,9 @@ class Stream
 		throw new Exception("No such stream");
 	}
 
+	/**
+	 * Save the stream
+	 */
 	public function save()
 	{
 		if ($this->is_new)
@@ -100,6 +133,11 @@ class Stream
 		}
 	}
 
+	/**
+	 * Get a specific entry
+	 * @param int $entryid The ID of the entry to load
+	 * @return StreamEntry|null The entry or null if the entry does not belong to this stream
+	 */
 	public function get_specific_entry($entryid)
 	{
 		$q = (new SqlQuery("select `id`, `stream_id`, `content` from `entries` where `id`=@entryid limit 1"))
@@ -125,6 +163,10 @@ class Stream
 		return $entry;
 	}
 
+	/**
+	 * Get the next (or last) entry in the stream
+	 * @return StreamEntry
+	 */
 	public function get_next_or_last_entry()
 	{
 		$result = null;
@@ -156,7 +198,9 @@ class Stream
 		return $result;
 	}
 
-
+	/**
+	 * Delete this stream and all of its entries
+	 */
 	public function delete()
 	{
 		$this->db->autocommit(FALSE);
@@ -178,13 +222,35 @@ class Stream
 }
 
 
-
+/**
+ * This is a simple DTO representing an entry in a stream
+ */
 class StreamEntry
 {
+	/**
+	 * The ID of the entry
+	 * @var int
+	 */
 	public $id = null;
+
+	/**
+	 * The ID of the stream that this entry belongs to
+	 * @var string
+	 */
 	public $streamid = null;
+
+	/**
+	 * The content of this entry
+	 * @var string
+	 */
 	public $content = null;
 
+	/**
+	 * Constructor
+	 * @param int $id The ID of this entry (defaults to null)
+	 * @param string $streamid The ID of the stream that this entry belongs to (defaults to null)
+	 * @param string $content The content of this entry (defaults to null)
+	 */
 	public function __construct($id = null, $streamid = null, $content = null)
 	{
 		$this->id = $id;
@@ -194,23 +260,49 @@ class StreamEntry
 }
 
 
-
+/**
+ * Sort of a DSL for parameterized SQL queries
+ */
 class SqlQuery
 {
+	/**
+	 * The raw query (with placeholders)
+	 * @var string
+	 */
 	private $query = null;
+
+	/**
+	 * The parameters for the query
+	 * @var QueryParam[]
+	 */
 	private $params = array();
 
+	/**
+	 * Construct a new query
+	 * @param string $query The raw SQL query with placeholders
+	 */
 	public function __construct($query)
 	{
 		$this->query = $query;
 	}
 
+	/**
+	 * Add a parameter
+	 * @param string @name The name of the param (e.g. "@id")
+	 * @param mixed @value The value for the param
+	 * @return SqlQuery The sql-query instance is returned to allow chaining
+	 */
 	public function add_param($name, $value)
 	{
 		$this->params[] = new QueryParam($name, $value);
 		return $this;
 	}
 
+	/**
+	 * Generates the actual SQL that can be run
+	 * @param MySqli @db The database instance (used for escaping)
+	 * @return string The db-ready sql-query
+	 */
 	public function prepare($db)
 	{
 		$sql = $this->query;
@@ -224,11 +316,28 @@ class SqlQuery
 	}
 }
 
+/**
+ * Simple DTO carrying parameter information to be used by SqlQuery
+ */
 class QueryParam
 {
+	/**
+	 * The name of the parameter
+	 * @var string
+	 */
 	public $name = null;
+
+	/**
+	 * The value of the parameter
+	 * @var mixed
+	 */
 	public $value = null;
 
+	/**
+	 * Construct a parameter
+	 * @param string @name The name of the parameter
+	 * @param mixed @value The value of the parameter
+	 */
 	public function __construct($name, $value)
 	{
 		$this->name = $name;
@@ -238,6 +347,10 @@ class QueryParam
 
 
 
+/**
+ * Handler for outputting list of streams
+ * @param MySqli @db The database instance
+ */
 function handler_debug_streams($db)
 {
 	header("Content-Type: text/json", true);
@@ -260,7 +373,10 @@ function handler_debug_streams($db)
 }
 
 
-
+/**
+ * Handler for deleting all streams and entries
+ * @param MySqli @db The database instance
+ */
 function handler_debug_deleteallstreams($db)
 {
 	$db->autocommit(FALSE);
@@ -276,7 +392,11 @@ function handler_debug_deleteallstreams($db)
 
 
 
-
+/**
+ * Handler for adding an entry
+ * @param MySqli @db The database instance
+ * @param string @path The request path
+ */
 function handler_add($db, $path)
 {
 	/**
@@ -312,7 +432,11 @@ function handler_add($db, $path)
 }
 
 
-
+/**
+ * Handler for deleting a stream
+ * @param MySqli @db The database instance
+ * @param string @path The request path
+ */
 function handler_delete($db, $path)
 {
 	/**
@@ -335,7 +459,11 @@ function handler_delete($db, $path)
 
 
 
-
+/**
+ * Handler for getting an entry
+ * @param MySqli @db The database instance
+ * @param string @path The request path
+ */
 function handler_get($db, $path)
 {
 	/**
@@ -400,7 +528,10 @@ function handler_get($db, $path)
 }
 
 
-
+/**
+ * Defines a parameter for an endpoint.
+ * This is used when generating documentation.
+ */
 class EndpointParameter
 {
 	public $name = null;
@@ -421,6 +552,9 @@ class EndpointParameter
 }
 
 
+/**
+ * Handler for the documentation page
+ */
 function handler_documentation()
 {
 	echo "<h1>Web Replay</h1>";
@@ -572,7 +706,12 @@ END;
 
 
 
-
+/**
+ * Check if a given string starts with a given needle
+ * @param string @haystack The string to check
+ * @param string @needle The string to check for
+ * @return bool True if haystack begins with needle, false otherwise
+ */
 function starts_with($haystack, $needle)
 {
     return !strncmp($haystack, $needle, strlen($needle));
@@ -580,8 +719,9 @@ function starts_with($haystack, $needle)
 
 
 
-
-
+//
+// open database connection
+//
 $db = new mysqli($config["db_host"], $config["db_user"], $config["db_pass"], $config["db_name"]);
 if ($db->connect_error)
 {
@@ -591,7 +731,6 @@ if ($db->connect_error)
 }
 
 
-$requestMethod = strtoupper($_SERVER["REQUEST_METHOD"]);
 
 /**
  * GET "/" => documentation
@@ -604,6 +743,7 @@ $requestMethod = strtoupper($_SERVER["REQUEST_METHOD"]);
  * DELETE "/streamid/" => deletes the stream and all of its entries
  */
 $path = $_SERVER["SCRIPT_NAME"];
+$requestMethod = strtoupper($_SERVER["REQUEST_METHOD"]);
 
 if ($path == "/" || $path == "")
 {
