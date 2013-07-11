@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# run all tests
 phpunit --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/
-#phpunit --filter test_valid_using_get --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/getters/SpecificGetTest.php
+
+# run specific fixture
 #phpunit --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/getters/SpecificGetTest.php
+
+# run specific test
+#phpunit --filter test_delete_valid_no_end_slash --verbose --bootstrap src/replayer-tests/bootstrap.php src/replayer-tests/DeleteTest.php

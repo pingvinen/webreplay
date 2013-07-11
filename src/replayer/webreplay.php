@@ -134,6 +134,26 @@ class Stream
 
 		return $result;
 	}
+
+
+	public function delete()
+	{
+		$this->db->autocommit(FALSE);
+
+		// remove all the entries
+		$entries = new SqlQuery("delete from `entries` where `stream_id`=@streamid");
+		$entries->add_param("@streamid", $this->id);
+		$this->db->query($entries->prepare($this->db));
+
+	
+		// remove the stream itself
+		$stream = new SqlQuery("delete from `streams` where `id`=@streamid");
+		$stream->add_param("@streamid", $this->id);
+		$this->db->query($stream->prepare($this->db));
+
+		$this->db->commit();
+		$this->db->autocommit(TRUE);
+	}
 }
 
 
@@ -149,6 +169,49 @@ class StreamEntry
 		$this->id = $id;
 		$this->streamid = $streamid;
 		$this->content = $content;
+	}
+}
+
+
+
+class SqlQuery
+{
+	private $query = null;
+	private $params = array();
+
+	public function __construct($query)
+	{
+		$this->query = $query;
+	}
+
+	public function add_param($name, $value)
+	{
+		$this->params[] = new QueryParam($name, $value);
+		return $this;
+	}
+
+	public function prepare($db)
+	{
+		$sql = $this->query;
+
+		foreach ($this->params as $p)
+		{
+			$sql = str_replace($p->name, "'" . $db->real_escape_string($p->value) . "'", $sql);
+		}
+
+		return $sql;
+	}
+}
+
+class QueryParam
+{
+	public $name = null;
+	public $value = null;
+
+	public function __construct($name, $value)
+	{
+		$this->name = $name;
+		$this->value = $value;
 	}
 }
 
@@ -230,6 +293,29 @@ function handler_add($db, $path)
 
 	header('400 Missing a stream ID');
 }
+
+
+
+function handler_delete($db, $path)
+{
+	/**
+	 * http://www.phpliveregex.com/
+	 * http://www.phpliveregex.com/p/CZ
+	 */
+	if (preg_match("/\/delete\/(?<id>[^\/?]+)(?:\/.*)*/i", $path, $matches) === 1)
+	{
+		$streamid = $matches["id"];
+
+		$stream = new Stream($streamid, $db);
+		$stream->load();
+		$stream->delete();
+
+		return;
+	}
+
+	header('400 Missing a stream ID');
+}
+
 
 
 
@@ -492,6 +578,7 @@ $requestMethod = strtoupper($_SERVER["REQUEST_METHOD"]);
  * POST "/add/streamid/" => adds the payload to the stream (and creates the stream if needed)
  * GET/POST "/streamid/" => returns the payload of the current (or last) entry in the stream
  * GET/POST "/streamid/entryid/" => returns the payload from the specific entry
+ * DELETE "/streamid/" => deletes the stream and all of its entries
  */
 $path = $_SERVER["SCRIPT_NAME"];
 
@@ -518,6 +605,11 @@ elseif ($path == "/debug/deleteallstreams/" || $path == "/debug/deleteallstreams
 elseif ($requestMethod == "POST" && starts_with($path, "/add/"))
 {
 	handler_add($db, $path);
+}
+
+elseif ($requestMethod == "DELETE" && starts_with($path, "/delete/"))
+{
+	handler_delete($db, $path);
 }
 
 else

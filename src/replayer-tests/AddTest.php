@@ -20,7 +20,7 @@ class AddTest extends FixtureBase
 		//
 		// add the stream
 		//
-		$add = new HttpRequest(get_endpoint("/add/$streamid/"), HttpRequest::METH_POST);
+		$add = new HttpRequest(get_endpoint("/add/$streamid"), HttpRequest::METH_POST);
 		$add->addRawPostData("{\"name\":\"value\",\"int\":2}");
 
 		$add->send();
