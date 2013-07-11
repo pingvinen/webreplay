@@ -228,9 +228,9 @@ function handler_get($db, $path)
 {
 	/**
 	 * http://www.phpliveregex.com/
-	 * http://www.phpliveregex.com/p/CK
+	 * http://www.phpliveregex.com/p/CP
 	 */
-	if (preg_match("/\/(?<streamid>[^\/]+)\/*(?<entryid>[0-9]+)*\/?/i", $path, $matches) === 1)
+	if (preg_match("/\/(?<streamid>[^\/]+)\/*(?<entryid>[^\/?]+)*\/?/i", $path, $matches) === 1)
 	{
 		$streamid = $matches["streamid"];
 
@@ -247,8 +247,24 @@ function handler_get($db, $path)
 			return;
 		}
 
+		//
+		// handle requests for specific entries
+		//
 		if (array_key_exists("entryid", $matches) === TRUE)
 		{
+			//
+			// make sure the entryID has the valid format
+			// (the regex finds invalid entryIDs on purpose
+			// to make it easier to spot requests with invalid
+			// entryIDs)
+			//
+			if (!is_numeric($matches["entryid"]))
+			{
+				header('HTTP/1.0 400 Invalid entry ID');
+				return;
+			}
+
+			// get the entry from the stream
 			$result = $stream->get_specific_entry($matches["entryid"]);
 			if ($result === null)
 			{
@@ -260,6 +276,10 @@ function handler_get($db, $path)
 			return;
 		}
 
+
+		//
+		// handle requests for next/last entry
+		//
 		echo $stream->get_next_or_last_entry();
 		return;
 	}
