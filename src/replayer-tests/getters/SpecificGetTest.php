@@ -3,7 +3,6 @@
 /**
  * Additional tests
  *
- * get specific non-existant entry
  * get with invalid entryid
  */
 
@@ -173,6 +172,33 @@ class SpecificGetTest extends FixtureBase
 		// get mismatched entry
 		//
 		$e1 = new HttpRequest(get_endpoint("/$stream2/1/"), HttpRequest::METH_GET);
+		$e1->send();
+		$this->assertEquals(404, $e1->getResponseCode(), "The response code should have been 404");
+		$this->assertEquals("", $e1->getResponseBody(), "The response body should be empty");
+	}
+
+
+
+	/**
+	 * Test a specific get, where the entryID does not exist
+	 * Requests are made using HTTP GET
+	 */
+	public function test_nonexistant_entry_using_get()
+	{
+		$streamid = "teststream";
+		$e1content = "{\"name\":\"entry1\",\"int\":1}";
+
+		//
+		// add the stream
+		//
+		$add = new HttpRequest(get_endpoint("/add/$streamid/"), HttpRequest::METH_POST);
+		$add->addRawPostData($e1content);
+		$add->send();
+
+		//
+		// get mismatched entry
+		//
+		$e1 = new HttpRequest(get_endpoint("/$streamid/666/"), HttpRequest::METH_GET);
 		$e1->send();
 		$this->assertEquals(404, $e1->getResponseCode(), "The response code should have been 404");
 		$this->assertEquals("", $e1->getResponseBody(), "The response body should be empty");
