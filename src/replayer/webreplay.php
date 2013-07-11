@@ -104,7 +104,7 @@ class Stream
 			return null;
 		}
 
-		return $col_content;
+		return new StreamEntry($col_id, $col_streamid, $col_content);
 	}
 
 	public function get_next_or_last_entry()
@@ -118,7 +118,7 @@ class Stream
 		$q->execute();
 		$q->bind_result($col_id, $col_streamid, $col_content);
 		$q->fetch();
-		$result = $col_content;
+		$result = new StreamEntry($col_id, $col_streamid, $col_content);
 		$q->close();
 
 		if ($col_id == null)
@@ -129,10 +129,26 @@ class Stream
 		}
 
 		// update the stream position
-		$this->position = $col_id;
+		$this->position = $result->id;
 		$this->save();
 
 		return $result;
+	}
+}
+
+
+
+class StreamEntry
+{
+	public $id = null;
+	public $streamid = null;
+	public $content = null;
+
+	public function __construct($id = null, $streamid = null, $content = null)
+	{
+		$this->id = $id;
+		$this->streamid = $streamid;
+		$this->content = $content;
 	}
 }
 
@@ -272,16 +288,14 @@ function handler_get($db, $path)
 				return;
 			}
 
-			echo $result;
-			return;
+			return $result->content;
 		}
 
 
 		//
 		// handle requests for next/last entry
 		//
-		echo $stream->get_next_or_last_entry();
-		return;
+		return $stream->get_next_or_last_entry()->content;
 	}
 
 
@@ -349,7 +363,7 @@ elseif ($requestMethod == "POST" && starts_with($path, "/add/"))
 
 else
 {
-	handler_get($db, $path);
+	echo handler_get($db, $path);
 }
 
 
