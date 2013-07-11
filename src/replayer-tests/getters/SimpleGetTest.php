@@ -1,12 +1,5 @@
 <?php
 
-/**
- * Additional tests
- *
- * get a non-existant stream
- * get with invalid streamid
- */
-
 class SimpleGetTest extends FixtureBase
 {
 	/**

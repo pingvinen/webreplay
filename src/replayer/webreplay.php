@@ -164,9 +164,9 @@ function handler_add($db, $path)
 {
 	/**
 	 * http://www.phpliveregex.com/
-	 * http://www.phpliveregex.com/p/AB
+	 * http://www.phpliveregex.com/p/CL
 	 */
-	if (preg_match("/\/add\/(?<id>[a-z0-9]+)(?:\/.*)*/i", $path, $matches) === 1)
+	if (preg_match("/\/add\/(?<id>[^\/]+)(?:\/.*)*/i", $path, $matches) === 1)
 	{
 		$streamid = $matches["id"];
 		$description = "empty description";
@@ -204,9 +204,9 @@ function handler_get($db, $path)
 {
 	/**
 	 * http://www.phpliveregex.com/
-	 * http://www.phpliveregex.com/p/B6
+	 * http://www.phpliveregex.com/p/CK
 	 */
-	if (preg_match("/\/(?<streamid>[a-z0-9]+)\/*(?<entryid>[0-9]+)*\/?/i", $path, $matches) === 1)
+	if (preg_match("/\/(?<streamid>[^\/]+)\/*(?<entryid>[0-9]+)*\/?/i", $path, $matches) === 1)
 	{
 		$streamid = $matches["streamid"];
 
@@ -234,7 +234,7 @@ function handler_get($db, $path)
 	}
 
 
-	header('HTTP/1.0 404 Not Found');
+	header('HTTP/1.0 400 Invalid stream or entry ID');
 }
 
 
