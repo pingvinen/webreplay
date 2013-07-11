@@ -86,10 +86,11 @@ class Stream
 	 */
 	public function load()
 	{
-		$sql = new SqlQuery("select `description`, `position` from `streams` where `id`=@streamid limit 1");
-		$sql->add_param("@streamid", $this->id);
+		$q = (new SqlQuery("select `description`, `position` from `streams` where `id`=@streamid limit 1"))
+				->add_param("@streamid", $this->id)
+				->prepare($this->db);
 
-		if ($res = $this->db->query($sql->prepare($this->db)))
+		if ($res = $this->db->query($q))
 		{
 			if ($res->num_rows !== 1)
 			{
@@ -124,12 +125,12 @@ class Stream
 		}
 		else
 		{
-			$q = new SqlQuery("update `streams` set `description`=@desc, `position`=@pos where `id`=@streamid limit 1");
-			$q
-				->add_param("@desc", $this->description)
-				->add_param("@pos", $this->position)
-				->add_param("@streamid", $this->id);
-			$this->db->query($q->prepare($this->db));
+			$q = (new SqlQuery("update `streams` set `description`=@desc, `position`=@pos where `id`=@streamid limit 1"))
+					->add_param("@desc", $this->description)
+					->add_param("@pos", $this->position)
+					->add_param("@streamid", $this->id)
+					->prepare($this->db);
+			$this->db->query($q);
 		}
 	}
 
