@@ -583,10 +583,10 @@ function starts_with($haystack, $needle)
 
 
 $db = new mysqli($config["db_host"], $config["db_user"], $config["db_pass"], $config["db_name"]);
-if (mysqli_connect_errno())
+if ($db->connect_error)
 {
 	header("500 DB connect failed");
-	printf("Connect failed: %s\n", mysqli_connect_error());
+	printf("Connect failed: %s\n", $db->connect_error);
 	exit();
 }
 
