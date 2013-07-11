@@ -85,9 +85,12 @@ class Stream
 		}
 		else
 		{
-			$q = $this->db->prepare("update `streams` set `description`=?, `position`=? where `id`=? limit 1");
-			$q->bind_param("sis", $this->description, $this->position, $this->id);
-			$q->execute();
+			$q = new SqlQuery("update `streams` set `description`=@desc, `position`=@pos where `id`=@streamid limit 1");
+			$q
+				->add_param("@desc", $this->description)
+				->add_param("@pos", $this->position)
+				->add_param("@streamid", $this->id);
+			$this->db->query($q->prepare($this->db));
 		}
 	}
 
