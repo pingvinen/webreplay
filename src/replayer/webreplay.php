@@ -337,6 +337,9 @@ function handler_documentation()
 th {
 	text-align: left;
 }
+td {
+	vertical-align: top;
+}
 </style>
 END;
 
