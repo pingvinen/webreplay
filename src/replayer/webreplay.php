@@ -613,6 +613,13 @@ END;
 	$p_error_msg->where = "Query-string or post variables";
 	$p_error_msg->isoptional = true;
 
+	$p_length = new EndpointParameter();
+	$p_length->name = "length";
+	$p_length->example = "13";
+	$p_length->description = "Defines how many characters of the response will be returned.";
+	$p_length->where = "Query-string or post variables";
+	$p_length->isoptional = true;
+
 	echo get_endpoint_doc(
 		"GET /debug/streams",
 		"Lists all streams in a json format"
@@ -637,13 +644,13 @@ END;
 	echo get_endpoint_doc(
 		"GET or POST /{streamid}",
 		"Gets the next or last entry from the stream.",
-		array($p_streamid, $p_delay, $p_error_code, $p_error_msg)
+		array($p_streamid, $p_delay, $p_length, $p_error_code, $p_error_msg)
 	);
 
 	echo get_endpoint_doc(
 		"GET or POST /{streamid}/{entryid}",
 		"Gets the next or last entry from the stream.",
-		array($p_streamid, $p_entryid, $p_delay, $p_error_code, $p_error_msg)
+		array($p_streamid, $p_entryid, $p_delay, $p_length, $p_error_code, $p_error_msg)
 	);
 
 	echo get_endpoint_doc(
@@ -809,8 +816,32 @@ else
 		return;
 	}
 
-	// call the handler
-	echo handler_get($db, $path, $delay_in_seconds);
+
+	// call the handler and get the response
+	$response = handler_get($db, $path, $delay_in_seconds);
+
+	// partial response
+	if (array_key_exists("length", $_REQUEST))
+	{
+		$length = $_REQUEST["length"];
+
+		if (!is_numeric($length))
+		{
+			header("HTTP/1.0 400 Length must be a number");
+			return;
+		}
+
+		if ($length < 0)
+		{
+			header("HTTP/1.0 400 Length must be 0 or positive");
+			return;
+		}
+
+		echo substr($response, 0, $length);
+		return;
+	}
+
+	echo $response;
 }
 
 
